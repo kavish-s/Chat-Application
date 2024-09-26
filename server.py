@@ -1,9 +1,16 @@
 import socket
 import threading
-
 from encryption import AES  # Assuming AES class is in a separate file
 
-clients = {}
+clients = []  # List to keep track of connected clients and their AES keys
+
+
+def broadcast_message(message, sender_socket):
+    for client in clients:
+        client_socket, aes = client
+        if client_socket != sender_socket:  # Send message to all clients except the sender
+            encrypted_message = aes.encrypt(message.encode('utf-8'))
+            client_socket.send(encrypted_message)
 
 
 def handle_client(client_socket, client_address):
@@ -12,22 +19,27 @@ def handle_client(client_socket, client_address):
         aes_key = client_socket.recv(32)
         aes = AES(aes_key)
 
+        # Receive alias from client
+        alias = client_socket.recv(1024).decode('utf-8')
+
+        clients.append((client_socket, aes))
+        print(f"{alias} from {client_address} connected.")
+
         while True:
             encrypted_message = client_socket.recv(1024)
             if encrypted_message:
                 decrypted_message = aes.decrypt(encrypted_message).decode('utf-8')
-                print(f"Client {client_address}: {decrypted_message}")
+                print(f"{decrypted_message}")
 
-                # Echo message back to client (or broadcast to other clients if needed)
-                response_message = f"Received: {decrypted_message}"
-                encrypted_response = aes.encrypt(response_message.encode('utf-8'))
-                client_socket.send(encrypted_response)
+                # Broadcast the message to all clients
+                broadcast_message(decrypted_message, client_socket)
             else:
-                print(f"Client {client_address} disconnected.")
+                print(f"{alias} from {client_address} disconnected.")
                 break
     except Exception as e:
         print(f"Error handling client {client_address}: {e}")
     finally:
+        clients.remove((client_socket, aes))  # Remove the client when they disconnect
         client_socket.close()
 
 
