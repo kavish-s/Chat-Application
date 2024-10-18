@@ -1,60 +1,94 @@
-# Chat Application
 
-## Overview
-This is a simple Python chat application designed for educational purposes, demonstrating the use of sockets for communication and AES encryption for secure message transmission. This project is developed as part of the Network Security subject to showcase fundamental networking and cryptography concepts.
+---
+
+# Secure Chat Application
+
+This project is a secure chat application that uses **RSA** for key exchange and **AES** for encrypted communication between clients and the server. The server uses a graphical interface to manage and display incoming client messages. The clients have their own GUI to send and receive messages.
 
 ## Features
-- **Real-time Messaging**: Users can send and receive messages instantly.
-- **AES Encryption**: Messages are encrypted using AES (Advanced Encryption Standard) to ensure privacy and security.
-- **Client-Server Architecture**: The application consists of a server that manages connections and clients that send and receive messages.
-- **Graphical User Interface (GUI)**: The server and client applications have a user-friendly GUI for better interaction and monitoring.
 
-## Technologies Used
-- Python
-- Sockets (for network communication)
-- `cryptography` library (for AES encryption)
-- Tkinter (for GUI)
+- **RSA Encryption**: Securely exchanges AES keys between the server and clients.
+- **AES Encryption**: Symmetric encryption is used to encrypt all chat messages.
+- **GUI for Server**: Displays chat messages and logs with the option to enable debugging.
+- **GUI for Clients**: Chat interface for clients to send and receive messages.
+- **Multi-client support**: The server can handle multiple clients simultaneously.
+- **Encrypted key exchange**: Secure transfer of AES key using RSA encryption.
 
-## Installation
-1. **Clone the Repository**:
+## How It Works
+
+### Key Exchange Process
+
+1. The server generates an **RSA key pair**.
+2. The server sends the **RSA public key** to the client when it connects.
+3. The client generates a **random AES key** and encrypts it using the server's RSA public key.
+4. The client sends the **encrypted AES key** to the server.
+5. The server decrypts the AES key using its RSA **private key**.
+6. All further messages are encrypted with **AES-256** using this key.
+
+### Chat Communication
+
+- **Clients**: Each client sends messages encrypted using AES-256. The client GUI provides a text area for entering messages, and sent messages are encrypted before transmission.
+- **Server**: The server decrypts the AES-encrypted messages, logs them in the GUI, and forwards the encrypted message to other connected clients.
+
+## Dependencies
+
+- Python 3.x
+- `cryptography` library: To install, run:
+  ```
+  pip install cryptography
+  ```
+- `tkinter`: Pre-installed with Python for GUI creation.
+
+## Files
+
+- `encryption.py`: Contains the AES encryption and decryption methods.
+- `server.py`: The server-side script. Handles multiple clients, performs RSA key generation, and logs messages.
+- `client.py`: The client-side script. Connects to the server, handles AES key generation, and sends/receives encrypted messages.
+
+## How to Run
+
+### Server
+
+1. Run the server by executing:
    ```bash
-   git clone https://github.com/kavish-s/chat-application.git
-   cd chat-application
+   python server.py
    ```
+2. The server GUI will open, showing the chat logs and debug logs (if enabled).
+3. Press "Start Server" to begin listening for client connections.
 
-2. **Install Required Packages**:
-   Make sure you have Python 3 installed. Then, install the required packages:
+### Client
+
+1. Run the client by executing:
    ```bash
-   pip install cryptography
+   python client.py
    ```
+2. A client GUI will open. Enter an alias and press OK.
+3. You can now send and receive encrypted messages in the chat.
 
-## Usage
-1. **Start the Server**:
-   - Navigate to the project directory and run the server script:
-     ```bash
-     python server.py
-     ```
-   - The server will listen for incoming client connections.
+### Debug Mode
 
-2. **Start the Client**:
-   - In a new terminal window, navigate to the project directory and run the client script:
-     ```bash
-     python client.py
-     ```
-   - Enter your alias when prompted and start sending messages.
+- On the server GUI, you can enable the "Debug Mode" checkbox to view the encrypted and decrypted messages for debugging purposes.
 
-3. **Debug Mode**:
-   - The server GUI includes a debug mode that allows you to view encrypted messages and their decrypted contents. Check the "Debug Mode" checkbox to enable this feature.
+## Project Structure
 
-## Code Structure
-- `server.py`: Contains the server-side logic and GUI implementation.
-- `client.py`: Contains the client-side logic for sending and receiving messages.
-- `encryption.py`: Implements the AES encryption and decryption functions.
-- `README.md`: Documentation for the project.
+```
+.
+├── encryption.py       # AES encryption/decryption logic
+├── server.py           # Server-side logic with RSA key exchange and message handling
+├── client.py           # Client-side logic with AES key exchange and message handling
+└── README.md           # Project documentation
+```
 
-## Contributing
-Contributions are welcome! Feel free to submit a pull request or open an issue to discuss improvements or bug fixes.
+## Security Considerations
 
-## Acknowledgments
-- Inspired by concepts learned in the Network Security course.
-- Special thanks to resources and tutorials on Python networking and cryptography.
+- **RSA** is used for key exchange to protect the AES key during transmission.
+- **AES-256** is used for encrypting all chat messages.
+- Messages exchanged between clients and server are protected from eavesdropping.
+
+## Future Improvements
+
+- **Authentication**: Add client authentication to ensure only authorized users can join.
+- **TLS/SSL**: Use TLS for encrypted communication over sockets.
+- **Message Integrity**: Implement HMAC or digital signatures to ensure message integrity.
+
+---
