@@ -3,7 +3,11 @@ import threading
 import tkinter as tk
 from tkinter import scrolledtext
 
-from encryption import AES  # Assuming AES class is in a separate file
+from cryptography.hazmat.backends import default_backend
+from cryptography.hazmat.primitives import serialization, hashes
+from cryptography.hazmat.primitives.asymmetric import rsa, padding
+
+from encryption import AES
 
 clients = []  # List to keep track of connected clients
 
@@ -12,7 +16,7 @@ class ServerGUI:
     def __init__(self, root):
         self.root = root
         self.root.title("Chat Server")
-        self.root.geometry("500x600")
+        self.root.geometry("500x650")
 
         self.chat_area = scrolledtext.ScrolledText(root, wrap=tk.WORD, state='disabled', height=20)
         self.chat_area.pack(pady=10, padx=10)
@@ -23,12 +27,29 @@ class ServerGUI:
         self.start_button = tk.Button(root, text="Start Server", command=self.start_server)
         self.start_button.pack(pady=5)
 
+        self.close_button = tk.Button(root, text="Close Server", command=self.close_server, state='disabled')
+        self.close_button.pack(pady=5)
+
         self.debug_mode = tk.BooleanVar(value=False)
         self.debug_checkbox = tk.Checkbutton(root, text="Debug Mode", variable=self.debug_mode)
         self.debug_checkbox.pack(pady=5)
 
+        # Generate RSA key pair
+        self.rsa_private_key = rsa.generate_private_key(
+            public_exponent=65537,
+            key_size=2048,
+            backend=default_backend()
+        )
+        self.rsa_public_key = self.rsa_private_key.public_key()
+
+        self.server_thread = None  # Thread to run the server
+
     def start_server(self):
-        threading.Thread(target=self.run_server, daemon=True).start()
+        if not self.server_thread or not self.server_thread.is_alive():
+            self.server_thread = threading.Thread(target=self.run_server, daemon=True)
+            self.server_thread.start()
+            self.close_button.config(state='normal')  # Enable the Close Server button
+            self.start_button.config(state='disabled')  # Disable Start button
 
     def run_server(self):
         server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -38,22 +59,37 @@ class ServerGUI:
 
         while True:
             client_socket, address = server_socket.accept()
+            self.log_message(f"Accepted connection from {address}")
             threading.Thread(target=self.handle_client, args=(client_socket, address), daemon=True).start()
 
     def handle_client(self, client_socket, address):
         try:
-            self.log_message(f"Accepted connection from {address}")
+            # Send RSA public key to the client
+            public_key_bytes = self.rsa_public_key.public_bytes(
+                encoding=serialization.Encoding.PEM,
+                format=serialization.PublicFormat.SubjectPublicKeyInfo
+            )
+            client_socket.send(public_key_bytes)
 
-            # Step 1: Receive AES key from the client
-            aes_key = client_socket.recv(32)  # Expecting a 32-byte AES key
-            aes = AES(aes_key)  # Initialize AES encryption with the received key
+            # Receive encrypted AES key from the client
+            encrypted_aes_key = client_socket.recv(256)
+            aes_key = self.rsa_private_key.decrypt(
+                encrypted_aes_key,
+                padding.OAEP(
+                    mgf=padding.MGF1(algorithm=hashes.SHA256()),
+                    algorithm=hashes.SHA256(),
+                    label=None
+                )
+            )
 
-            # Step 2: Receive the alias
+            aes = AES(aes_key)
+            self.log_debug(f"Received and decrypted AES key from {address}")
+
+            # Handle client communication
             alias = client_socket.recv(1024).decode('utf-8')
             self.log_message(f"{alias} has joined the chat from {address}")
             clients.append((client_socket, aes, alias))
 
-            # Step 3: Handle receiving messages from the client
             while True:
                 encrypted_message = client_socket.recv(1024)
                 if encrypted_message:
@@ -80,6 +116,14 @@ class ServerGUI:
                 except Exception as e:
                     self.log_message(f"Error sending message to {alias}: {e}")
 
+    def close_server(self):
+        for client_socket, _, _ in clients:
+            client_socket.close()  # Close each client connection
+        clients.clear()  # Clear the client list
+        self.log_message("Server closed.")
+        self.start_button.config(state='normal')  # Re-enable Start Server button
+        self.close_button.config(state='disabled')  # Disable Close Server button
+
     def log_message(self, message):
         self.chat_area.config(state='normal')
         self.chat_area.insert(tk.END, message + '\n')
@@ -97,7 +141,7 @@ class ServerGUI:
 # Main function to start the server GUI
 def main():
     root = tk.Tk()
-    app = ServerGUI(root)
+    ServerGUI(root)
     root.mainloop()
 
 
