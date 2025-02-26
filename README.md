@@ -1,4 +1,3 @@
-
 ---
 
 # Secure Chat Application
@@ -44,6 +43,7 @@ This project is a secure chat application that uses **RSA** for key exchange and
 - `encryption.py`: Contains the AES encryption and decryption methods.
 - `server.py`: The server-side script. Handles multiple clients, performs RSA key generation, and logs messages.
 - `client.py`: The client-side script. Connects to the server, handles AES key generation, and sends/receives encrypted messages.
+- `LICENSE`: Contains the licensing information for the project.
 
 ## How to Run
 
@@ -76,6 +76,7 @@ This project is a secure chat application that uses **RSA** for key exchange and
 ├── encryption.py       # AES encryption/decryption logic
 ├── server.py           # Server-side logic with RSA key exchange and message handling
 ├── client.py           # Client-side logic with AES key exchange and message handling
+├── LICENSE             # Project licensing information
 └── README.md           # Project documentation
 ```
 
@@ -91,4 +92,11 @@ This project is a secure chat application that uses **RSA** for key exchange and
 - **TLS/SSL**: Use TLS for encrypted communication over sockets.
 - **Message Integrity**: Implement HMAC or digital signatures to ensure message integrity.
 
+## Contributors
+
+This project was developed by:
+- [Kavish Shah](https://www.linkedin.com/in/-kavish-shah/)
+- [Atharva Shinde](https://www.linkedin.com/in/atharvanshinde/)
+
 ---
+
